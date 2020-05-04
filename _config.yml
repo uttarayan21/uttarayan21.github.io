@@ -28,7 +28,7 @@ twitter_username: uttarayan21
 github_username:  uttarayan21
 
 # Build settings
-theme: Hacker
+theme:hacker 
 plugins:
   - jekyll-feed
 
