@@ -2,29 +2,28 @@
 ---
 
 @import "{{ site.theme }}";
-
 .glitch {
-  /* all: revert; */
-  color: black;
+  // all: revert;
+  text-decoration: none;
   font-size: 2.5vw;
   padding-top: 3%;
   margin-bottom: 0;
 }
 .glitch:after, .glitch:before {
   position: absolute;
-  background: white;
+  background: rgba(0,0,0,0);
   width: 100%;
   content: attr(data-text);
   clip: rect(0, 900px, 0, 0);
 }
 .glitch:after {
   animation: glitch-anim 2s infinite linear alternate-reverse;
-  left: 2px;
+  left: 35px;
   text-shadow: 1px 0 red;
 }
 .glitch:before {
   animation: glitch-anim-2 3s infinite linear alternate-reverse;
-  left: -2px;
+  left: 37px;
   text-shadow: -1px 0 limegreen;
 }
 @keyframes glitch-anim {
@@ -51,7 +50,7 @@
   100% { clip: rect(15px, 9999px, 72px, 0); }
 }
 
-@keyframes glitch-anim-2 {
+@keyframes litch-anim-2 {
   0% { clip: rect(65px, 9999px, 99px, 0); }
   5% { clip: rect(86px, 9999px, 70px, 0); }
   10% { clip: rect(79px, 9999px, 60px, 0); }
