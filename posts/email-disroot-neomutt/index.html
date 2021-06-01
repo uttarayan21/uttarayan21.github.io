@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="chrome=1">
+        <meta name="HandheldFriendly" content="True">
+        <meta name="MobileOptimized" content="320">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="referrer" content="no-referrer">
+
+        <link rel="stylesheet" href="https:&#x2F;&#x2F;uttarayan21.github.io&#x2F;fonts.css">
+        <link rel="stylesheet" href="https:&#x2F;&#x2F;uttarayan21.github.io&#x2F;style.css">
+
+        <title>
+    Setting up neomutt with notmuch, mbsync and gpg signing
+</title>
+
+        
+    </head>
+    <body>
+        
+    <div class="wrap">
+        <div class="section" id="title">
+            
+    Setting up neomutt with notmuch, mbsync and gpg signing
+
+        </div>
+        <div class="section" id="sections">
+            
+        </div>
+        <div class="section" id="content">
+            
+    
+        
+        
+            
+                1320 words
+            
+        
+        
+            
+            
+                &#183; 7 min
+            
+        
+        
+        
+        <hr/>
+    
+    <p>This is an update from my previous post <a href="https://uttarayan21.github.io/2021/02/setting-up-neomutt">here</a>.</p>
+<ul>
+<li><a href="https://uttarayan21.github.io/posts/email-disroot-neomutt/#before-we-begin">start</a></li>
+<li><a href="https://uttarayan21.github.io/posts/email-disroot-neomutt/#installing">install</a></li>
+<li><a href="https://uttarayan21.github.io/posts/email-disroot-neomutt/#notmuch">notmuch</a>
+<ul>
+<li><a href="https://uttarayan21.github.io/posts/email-disroot-neomutt/#notmuchhooks">hooks</a>
+<ul>
+<li><a href="https://uttarayan21.github.io/posts/email-disroot-neomutt/#pre-new">pre-new</a></li>
+<li><a href="https://uttarayan21.github.io/posts/email-disroot-neomutt/#post-new">post-new</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="https://uttarayan21.github.io/posts/email-disroot-neomutt/#mbsync">mbsync</a>
+<ul>
+<li><a href="https://uttarayan21.github.io/posts/email-disroot-neomutt/#gmail">gmail</a></li>
+<li><a href="https://uttarayan21.github.io/posts/email-disroot-neomutt/#disroot">disroot</a></li>
+</ul>
+</li>
+<li><a href="https://uttarayan21.github.io/posts/email-disroot-neomutt/#neomutt">neomutt</a>
+<ul>
+<li><a href="https://uttarayan21.github.io/posts/email-disroot-neomutt/#neomuttmailcap">mailcap</a></li>
+<li><a href="https://uttarayan21.github.io/posts/email-disroot-neomutt/#neomuttvim-keysrc">vim-keys.rc</a></li>
+<li><a href="https://uttarayan21.github.io/posts/email-disroot-neomutt/#neomuttdracula">dracula</a></li>
+</ul>
+</li>
+<li><a href="https://uttarayan21.github.io/posts/email-disroot-neomutt/#gpg">encrypt/sign</a></li>
+<li><a href="https://uttarayan21.github.io/posts/email-disroot-neomutt/#systemd-timers">systemd/timers</a></li>
+</ul>
+<h2 id="before-we-begin">Before we begin</h2>
+<p>I recently move to <a href="https://uttarayan21.github.io/posts/email-disroot-neomutt/disroot.org">disroot</a> and wanted to change from gmi to mbsync.
+First of all I don't like dotfiles inside the home folder.<br />
+And I wish all programs would follow the <a href="https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html">XDG Base directory standard</a>.<br />
+But since they don't we have to manually export environment variables to specify the location of config files.<br />
+ArchWiki has an excellent list of programs that support the XDG Base directory spec <a href="https://wiki.archlinux.org/index.php/XDG_Base_Directory">here</a></p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#65737e;"># Notmuch
+</span><span style="color:#b48ead;">export </span><span style="color:#bf616a;">NOTMUCH_CONFIG</span><span style="color:#c0c5ce;">=&quot;$</span><span style="color:#bf616a;">XDG_CONFIG_HOME</span><span style="color:#a3be8c;">/notmuch/notmuchrc</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#b48ead;">export </span><span style="color:#bf616a;">NMBGIT</span><span style="color:#c0c5ce;">=&quot;$</span><span style="color:#bf616a;">XDG_DATA_HOME</span><span style="color:#a3be8c;">/notmuch/nmbug</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#96b5b4;">alias </span><span style="color:#8fa1b3;">mbsync </span><span style="color:#bf616a;">-c </span><span style="color:#c0c5ce;">&quot;$</span><span style="color:#bf616a;">XDG_CONFIG_HOME</span><span style="color:#a3be8c;">/isync/config</span><span style="color:#c0c5ce;">&quot;
+</span></code></pre>
+<p>You need to make sure that the <code>XDG_CONFIG_HOME</code> and <code>XDG_DATA_HOME</code> variables are already exported.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#65737e;"># XDG Dirs
+</span><span style="color:#b48ead;">export </span><span style="color:#bf616a;">XDG_CONFIG_HOME</span><span style="color:#c0c5ce;">=&quot;</span><span style="color:#a3be8c;">/home/&lt;username&gt;/.config</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#b48ead;">export </span><span style="color:#bf616a;">XDG_DATA_HOME</span><span style="color:#c0c5ce;">=&quot;</span><span style="color:#a3be8c;">/home/&lt;username&gt;/.local/share</span><span style="color:#c0c5ce;">&quot;
+</span></code></pre><h2 id="installing">Installing</h2>
+<ul>
+<li>Arch Linux</li>
+</ul>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">sudo</span><span style="color:#c0c5ce;"> pacman</span><span style="color:#bf616a;"> -S</span><span style="color:#c0c5ce;"> notmuch neomutt isync
+</span></code></pre><h2 id="notmuch">Notmuch</h2>
+<p>I'm setting my maildir to <code>~/Mail</code>.<br />
+You can run <code>notmuch init</code> or you can directly just edit the <code>~/.config/notmuch/notmuchrc</code> file and put in the following.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">[database]
+path</span><span style="color:#c0c5ce;">=</span><span style="color:#a3be8c;">/home/</span><span style="color:#c0c5ce;">&lt;username&gt;/Mail
+
+</span><span style="color:#bf616a;">[user]
+name</span><span style="color:#c0c5ce;">=&lt;Your </span><span style="color:#bf616a;">Name</span><span style="color:#c0c5ce;">&gt;
+
+</span><span style="color:#b48ead;">[</span><span style="color:#c0c5ce;">new</span><span style="color:#b48ead;">]
+</span><span style="color:#bf616a;">tags</span><span style="color:#c0c5ce;">=</span><span style="color:#a3be8c;">unread</span><span style="color:#c0c5ce;">;</span><span style="color:#bf616a;">inbox</span><span style="color:#c0c5ce;">;
+</span><span style="color:#bf616a;">ignore</span><span style="color:#c0c5ce;">=</span><span style="color:#a3be8c;">/.</span><span style="color:#c0c5ce;">*</span><span style="color:#b48ead;">[</span><span style="color:#a3be8c;">.</span><span style="color:#b48ead;">]</span><span style="color:#c0c5ce;">(</span><span style="color:#bf616a;">json</span><span style="color:#c0c5ce;">|</span><span style="color:#bf616a;">lock</span><span style="color:#c0c5ce;">|</span><span style="color:#bf616a;">bak</span><span style="color:#c0c5ce;">|</span><span style="color:#bf616a;">uidvalidity</span><span style="color:#c0c5ce;">|</span><span style="color:#bf616a;">mbsyncstate</span><span style="color:#c0c5ce;">|)$/
+
+</span><span style="color:#bf616a;">[search]
+exclude_tags</span><span style="color:#c0c5ce;">=</span><span style="color:#a3be8c;">deleted</span><span style="color:#c0c5ce;">;</span><span style="color:#bf616a;">spam</span><span style="color:#c0c5ce;">;
+
+</span><span style="color:#bf616a;">[maildir]
+synchronize_flags</span><span style="color:#c0c5ce;">=</span><span style="color:#a3be8c;">true
+</span></code></pre><h4 id="notmuch-hooks">notmuch/hooks</h4>
+<p>Notmuch hooks are executed pre and post a notmuch command</p>
+<p>the hooks are stored in</p>
+<pre style="background-color:#2b303b;">
+<code><span style="color:#c0c5ce;">~/Mail/.notmuch/hooks
+</span></code></pre>
+<p>in my case.</p>
+<h4 id="pre-new">pre-new</h4>
+<p>Adding a pre-new hook with the contents</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#65737e;">#!/bin/sh
+</span><span style="color:#96b5b4;">cd </span><span style="color:#bf616a;">~</span><span style="color:#c0c5ce;">/Mail
+</span><span style="color:#bf616a;">mbsync -a -c ~</span><span style="color:#c0c5ce;">/.config/isync/config
+</span></code></pre>
+<p>in <code>~/Mail/.notmuch/hooks/pre-new</code></p>
+<p>This will execute before notmuch new is executed</p>
+<h4 id="post-new">post-new</h4>
+<p>And adding post-new</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#65737e;">#!/bin/sh
+
+</span><span style="color:#bf616a;">gmail_unread</span><span style="color:#c0c5ce;">=$</span><span style="color:#a3be8c;">(</span><span style="color:#bf616a;">notmuch</span><span style="color:#a3be8c;"> count tag:unread to:</span><span style="color:#c0c5ce;">&quot;</span><span style="color:#a3be8c;">*gmail.com</span><span style="color:#c0c5ce;">&quot;</span><span style="color:#a3be8c;">)
+</span><span style="color:#bf616a;">proton_unread</span><span style="color:#c0c5ce;">=$</span><span style="color:#a3be8c;">(</span><span style="color:#bf616a;">notmuch</span><span style="color:#a3be8c;"> count tag:unread to:</span><span style="color:#c0c5ce;">&quot;</span><span style="color:#a3be8c;">*protonmail.com</span><span style="color:#c0c5ce;">&quot;</span><span style="color:#a3be8c;">)
+</span><span style="color:#bf616a;">disroot_unread</span><span style="color:#c0c5ce;">=$</span><span style="color:#a3be8c;">(</span><span style="color:#bf616a;">notmuch</span><span style="color:#a3be8c;"> count tag:unread to:</span><span style="color:#c0c5ce;">&quot;</span><span style="color:#a3be8c;">*disroot.org</span><span style="color:#c0c5ce;">&quot;</span><span style="color:#a3be8c;">)
+</span><span style="color:#bf616a;">unread</span><span style="color:#c0c5ce;">=$</span><span style="color:#a3be8c;">(</span><span style="color:#bf616a;">expr </span><span style="color:#c0c5ce;">$</span><span style="color:#bf616a;">gmail_unread</span><span style="color:#a3be8c;"> + </span><span style="color:#c0c5ce;">$</span><span style="color:#bf616a;">proton_unread</span><span style="color:#a3be8c;"> + </span><span style="color:#c0c5ce;">$</span><span style="color:#bf616a;">disroot_unread</span><span style="color:#a3be8c;">)
+
+</span><span style="color:#b48ead;">if </span><span style="color:#96b5b4;">[[ </span><span style="color:#c0c5ce;">$</span><span style="color:#bf616a;">unread -gt</span><span style="color:#c0c5ce;"> 0 </span><span style="color:#96b5b4;">]]</span><span style="color:#c0c5ce;">;</span><span style="color:#b48ead;">then
+    </span><span style="color:#bf616a;">label</span><span style="color:#c0c5ce;">=&quot;&quot;
+    </span><span style="color:#b48ead;">if </span><span style="color:#96b5b4;">[[ </span><span style="color:#c0c5ce;">$</span><span style="color:#bf616a;">gmail_unread -gt</span><span style="color:#c0c5ce;"> 0 </span><span style="color:#96b5b4;">]]</span><span style="color:#c0c5ce;">;</span><span style="color:#b48ead;">then
+       </span><span style="color:#bf616a;">label</span><span style="color:#c0c5ce;">+=&quot;</span><span style="color:#a3be8c;">\n</span><span style="color:#c0c5ce;">$</span><span style="color:#bf616a;">gmail_unread</span><span style="color:#a3be8c;"> in gmail</span><span style="color:#c0c5ce;">&quot;
+    </span><span style="color:#b48ead;">fi
+    if </span><span style="color:#96b5b4;">[[ </span><span style="color:#c0c5ce;">$</span><span style="color:#bf616a;">proton_unread -gt</span><span style="color:#c0c5ce;"> 0 </span><span style="color:#96b5b4;">]]</span><span style="color:#c0c5ce;">;</span><span style="color:#b48ead;">then
+        </span><span style="color:#bf616a;">label</span><span style="color:#c0c5ce;">+=&quot;</span><span style="color:#a3be8c;">\n</span><span style="color:#c0c5ce;">$</span><span style="color:#bf616a;">proton_unread</span><span style="color:#a3be8c;"> in protonmail</span><span style="color:#c0c5ce;">&quot;
+    </span><span style="color:#b48ead;">fi
+    if </span><span style="color:#96b5b4;">[[ </span><span style="color:#c0c5ce;">$</span><span style="color:#bf616a;">disroot_unread -gt</span><span style="color:#c0c5ce;"> 0 </span><span style="color:#96b5b4;">]]</span><span style="color:#c0c5ce;">;</span><span style="color:#b48ead;">then
+        </span><span style="color:#bf616a;">label</span><span style="color:#c0c5ce;">+=&quot;</span><span style="color:#a3be8c;">\n</span><span style="color:#c0c5ce;">$</span><span style="color:#bf616a;">disroot_unread</span><span style="color:#a3be8c;"> in disroot</span><span style="color:#c0c5ce;">&quot;
+    </span><span style="color:#b48ead;">fi
+    </span><span style="color:#bf616a;">notify-send </span><span style="color:#c0c5ce;">&quot;$</span><span style="color:#bf616a;">unread</span><span style="color:#a3be8c;"> unread emails</span><span style="color:#c0c5ce;">&quot; &quot;$</span><span style="color:#bf616a;">label</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#b48ead;">fi
+
+</span></code></pre>
+<p>This will execute after notmuch new</p>
+<p>Notmuch marks sent messages a unread and inbox tags.<br />
+The post-new will remove inbox and unread tags from sent messages.<br />
+This will also send a notification with the count of unread emails.</p>
+<h2 id="mbsync">mbsync</h2>
+<p>Passwords are saved using the <code>pass</code> command.<br />
+I use gnome-keyring to unlock the gpg keyring and cache it to gpg-agent on unlock.<br />
+You can try to use <a href="https://github.com/cruegge/pam-gnupg">cruegge/pam-gnupg</a> if you don't want to use gnome-keyring.</p>
+<h2 id="gmail">gmail</h2>
+<pre style="background-color:#2b303b;">
+<code><span style="color:#c0c5ce;">IMAPAccount &lt;username&gt;@gmail.com
+    Host imap.gmail.com
+    User &lt;username&gt;@gmail.com
+    PassCmd &quot;pass Email/mbsync&quot;
+    SSLType IMAPS
+    AuthMechs LOGIN
+
+IMAPStore gmail-remote
+    Account &lt;username&gt;@gmail.com
+    UseNamespace yes
+
+MaildirStore gmail-local
+    SubFolders Verbatim
+    Inbox ~/Mail/gmail/Inbox
+    Path ~/Mail/gmail
+
+Channel gmail-inbox
+    Create Both
+    Expunge Both
+    SyncState *
+    Sync Pull All Push All
+    Far :gmail-remote:
+    Near :gmail-local:
+    Patterns &quot;INBOX&quot;
+
+Channel gmail-sent
+    Create Both
+    Expunge Both
+    SyncState *
+    Sync Pull All Push All
+    Far :gmail-remote:&quot;[Gmail]/Sent Mail&quot;
+    Near :gmail-local:/Sent
+
+Channel gmail-trash
+    Create Both
+    Expunge Both
+    SyncState *
+    Sync Pull All Push All
+    Far :gmail-remote:&quot;[Gmail]/Trash&quot;
+    Near :gmail-local:/Trash
+
+Channel gmail-drafts
+    Create Both
+    Expunge Both
+    SyncState *
+    Sync Pull All Push All
+    Far :gmail-remote:&quot;[Gmail]/Drafts&quot;
+    Near :gmail-local:/Drafts
+
+Channel gmail-spam
+    Create Both
+    Expunge Both
+    SyncState *
+    Sync Pull All Push All
+    Far :gmail-remote:&quot;[Gmail]/Spam&quot;
+    Near :gmail-local:/Spam
+
+Group gmail
+    Channel gmail-inbox
+    Channel gmail-drafts
+    Channel gmail-sent
+    Channel gmail-trash
+    Channel gmail-spam
+</span></code></pre><h2 id="disroot">disroot</h2>
+<pre style="background-color:#2b303b;">
+<code><span style="color:#c0c5ce;">IMAPAccount &lt;username&gt;@disroot.org
+    Host disroot.org
+    Port 993
+    User &lt;username&gt;@disroot.org
+    PassCmd &quot;pass user.disroot.org/&lt;username&gt;&quot;
+    SSLType IMAPS
+    AuthMechs LOGIN
+
+IMAPStore disroot-remote
+    Account &lt;username&gt;@disroot.org
+    UseNamespace yes
+
+MaildirStore disroot-local
+    SubFolders Verbatim
+    Inbox ~/Mail/disroot/INBOX
+    Path ~/Mail/disroot/
+
+Channel disroot
+    Far :disroot-remote:
+    Near :disroot-local:
+    Patterns *
+    Create Both
+    Expunge Both
+    SyncState *
+    Sync Pull All Push All
+</span></code></pre><h2 id="neomutt">neomutt</h2>
+<p>Edit the neomutt config file like so.</p>
+<pre style="background-color:#2b303b;">
+<code><span style="color:#c0c5ce;"># Gmail
+source ~/.config/neomutt/gmail/&lt;usrname&gt;
+folder-hook &#39;gmail&#39; &#39;source ~/.config/neomutt/gmail/&lt;usrname&gt;&#39;
+
+# Disroot
+source ~/.config/neomutt/disroot/&lt;usrname&gt;
+folder-hook &#39;disroot&#39; &#39;source ~/.config/neomutt/disroot/&lt;usrname&gt;&#39;
+
+# Macros for switching accounts
+macro index &lt;f2&gt; &#39;&lt;sync-mailbox&gt;&lt;refresh&gt;&lt;enter-command&gt;source ~/.config/neomutt/gmail/&lt;usrname&gt;&lt;enter&gt;&lt;change-folder&gt;!&lt;enter&gt;&#39;
+macro index &lt;f3&gt; &#39;&lt;sync-mailbox&gt;&lt;refresh&gt;&lt;enter-command&gt;source ~/.config/neomutt/disroot/&lt;usrname&gt;&lt;enter&gt;&lt;change-folder&gt;!&lt;enter&gt;&#39;
+
+# Sign with gpgme
+set crypt_use_gpgme=yes
+set postpone_encrypt = yes
+set pgp_self_encrypt = yes
+set crypt_use_pka = no
+set crypt_autoencrypt = no
+set crypt_autopgp = yes
+set crypt_autosign = yes
+set crypt_verify_sig = yes
+set pgp_sign_as=0xYOUR123GPG
+
+# Sidebar
+set sidebar_visible
+# set sidebar_format = &quot;%B%?F? [%F]?%* %?N?%N/?%S&quot;
+set sidebar_format = &quot;%D%* [%N]%*&quot;
+set mail_check_stats
+
+# Activate caching, as it can greatly improve speed
+set header_cache = &quot;~/.cache/neomutt/headers&quot;
+set message_cachedir = &quot;~/.cache/neomutt/bodies&quot;
+
+# Disable saving outgoing mail since Gmail saves them by default.
+# set record = &quot;&quot;
+
+# Sort by threads
+set sort = threads
+# Sort threads by last date recieved - newest first
+set sort_aux = reverse-last-date-received
+# Show date in year/month/day hour:minute format
+set date_format=&quot;%d/%m/%y %I:%M%p&quot;
+
+# mailcap and auto_view
+set mailcap_path = &quot;~/.config/neomutt/mailcap&quot;
+auto_view text/html
+
+source ~/.config/neomutt/vimkeys.muttrc
+source ~/.config/neomutt/dracula/dracula.muttrc
+</span></code></pre>
+<p>If you don't use vim keys or the dracula theme remove the last two lines.</p>
+<h4 id="neomutt-mailcap">neomutt/mailcap</h4>
+<p>To view html emails use mailcap with w3m<br />
+The mailcap file <code>~/.config/neomutt/mailcap</code></p>
+<pre style="background-color:#2b303b;">
+<code><span style="color:#c0c5ce;">text/html; w3m -I %{charset} -T text/html ; copiousoutput; nametemplate=%s.html
+</span></code></pre><h4 id="neomutt-vim-keys-rc">neomutt/vim-keys.rc</h4>
+<p>The vim.muttrc file from <a href="https://github.com/neomutt/neomutt/blob/master/contrib/vim-keys/vim-keys.rc">vim-keys.rc</a></p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#65737e;"># Moving around
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> attach,browser,index       g   noop
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> attach,browser,index       gg  first-entry
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> attach,browser,index       G   last-entry
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> pager                      g  noop
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> pager                      gg  top
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> pager                      G   bottom
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> pager                      k   previous-line
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> pager                      j   next-line
+
+</span><span style="color:#65737e;"># Scrolling
+# bind attach,browser,pager,index \CF next-page
+# bind attach,browser,pager,index \CB previous-page
+
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> attach,browser,pager,index </span><span style="color:#96b5b4;">\C</span><span style="color:#c0c5ce;">u half-up
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> attach,browser,pager,index </span><span style="color:#96b5b4;">\C</span><span style="color:#c0c5ce;">d half-down
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> browser,pager              </span><span style="color:#96b5b4;">\C</span><span style="color:#c0c5ce;">e next-line
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> browser,pager              </span><span style="color:#96b5b4;">\C</span><span style="color:#c0c5ce;">y previous-line
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> index                      </span><span style="color:#96b5b4;">\C</span><span style="color:#c0c5ce;">e next-line
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> index                      </span><span style="color:#96b5b4;">\C</span><span style="color:#c0c5ce;">y previous-line
+
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> pager,index                d   noop
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> pager,index                dd  delete-message
+
+</span><span style="color:#65737e;"># bind index                      \Cm list-reply # Doesn&#39;t work currently
+
+
+# Threads
+</span><span style="color:#c0c5ce;">bind browser,pager,index        N   search-opposite
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> pager,index                dT  delete-thread
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> pager,index                dt  delete-subthread
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> pager,index                gt  next-thread
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> pager,index                gT  previous-thread
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> index                      za  collapse-thread
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> index                      zA  collapse-all </span><span style="color:#65737e;"># Missing :folddisable/foldenable
+</span></code></pre><h3 id="neomutt-dracula">neomutt/dracula</h3>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#96b5b4;">cd </span><span style="color:#bf616a;">~</span><span style="color:#c0c5ce;">/.config/neomutt/
+</span><span style="color:#bf616a;">git</span><span style="color:#c0c5ce;"> clone https://github.com/dracula/mutt dracula
+</span></code></pre><h2 id="gpg">GPG</h2>
+<p>Set your gpg key in neomutt in the neomuttrc as</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">gpg --keyid-format</span><span style="color:#c0c5ce;"> 0xlong</span><span style="color:#bf616a;"> -K --fingerprint
+</span></code></pre>
+<p>then set the gpg key in neomutt</p>
+<pre style="background-color:#2b303b;">
+<code><span style="color:#c0c5ce;">set pgp_sign_as=0xYOUR123GPG
+</span></code></pre><h3 id="systemd-timers">Systemd Timers</h3>
+<p>We can use user systemd units to auto run notmuch new and sync emails automatically.</p>
+<p>Systemd timers and services don't seem to have the environment variables when run.
+So we need to export them before we run the services.</p>
+<p><code>checkmail</code></p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#65737e;">#!/usr/bin/bash
+</span><span style="color:#b48ead;">export </span><span style="color:#bf616a;">NOTMUCH_CONFIG</span><span style="color:#c0c5ce;">=</span><span style="color:#a3be8c;">/home/</span><span style="color:#c0c5ce;">&lt;username&gt;/.config/notmuch/notmuchrc
+</span><span style="color:#b48ead;">export </span><span style="color:#bf616a;">NMBGIT</span><span style="color:#c0c5ce;">=</span><span style="color:#a3be8c;">/home/</span><span style="color:#c0c5ce;">&lt;username&gt;/.local/share/notmuch/nmbug
+</span><span style="color:#bf616a;">notmuch</span><span style="color:#c0c5ce;"> new
+</span></code></pre>
+<p>Put checkmail in <code>~/.local/bin/checkmail</code></p>
+<p><code>checkmail.service</code></p>
+<pre style="background-color:#2b303b;">
+<code class="language-systemd" data-lang="systemd"><span style="color:#c0c5ce;">[Unit]
+Description=Check Mail
+RefuseManualStart=no
+RefuseManualStop=yes
+
+[Service]
+Type=oneshot
+ExecStart=/home/&lt;username&gt;/.local/bin/checkmail
+</span></code></pre>
+<p><code>checkmail.timer</code></p>
+<pre style="background-color:#2b303b;">
+<code class="language-systemd" data-lang="systemd"><span style="color:#c0c5ce;">[Unit]
+Description=Check Mail every five minutes
+RefuseManualStart=no
+RefuseManualStop=no
+
+[Timer]
+Persistent=false
+OnBootSec= 5min
+OnUnitActiveSec= 5min
+Unit=checkmail.service
+
+[Install]
+WantedBy=default.target
+</span></code></pre>
+<p>put <code>checkmail.timer</code> and <code>checkmail.service</code> in <code>~/.config/systemd/user/</code> folder</p>
+<p>Now you can enable checkmail.timer to start on login by</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">systemctl --user</span><span style="color:#c0c5ce;"> enable checkmail.timer
+</span></code></pre>
+<p>You can check the status of <code>checkmail.timer</code> by</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">systemctl --user</span><span style="color:#c0c5ce;"> status checkmail.timer
+</span></code></pre>
+
+        </div>
+        
+    <div class="section bottom-menu">
+        <hr/>
+        <p>
+            
+                
+                    <a href="&#x2F;posts">posts</a>
+                    &#183;
+                
+                    <a href="&#x2F;about">about</a>
+                    &#183;
+                
+                    <a href="https:&#x2F;&#x2F;github.com&#x2F;uttarayan21">github</a>
+                    &#183;
+                
+            
+            <a href="https:&#x2F;&#x2F;uttarayan21.github.io">
+                home
+            </a>
+        </p>
+    </div>
+
+        
+    
+
+    </div>
+
+    </body>
+</html>

@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://uttarayan21.github.io/sitemap.xml

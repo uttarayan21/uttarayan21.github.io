@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="chrome=1">
+        <meta name="HandheldFriendly" content="True">
+        <meta name="MobileOptimized" content="320">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="referrer" content="no-referrer">
+
+        <link rel="stylesheet" href="https:&#x2F;&#x2F;uttarayan21.github.io&#x2F;fonts.css">
+        <link rel="stylesheet" href="https:&#x2F;&#x2F;uttarayan21.github.io&#x2F;style.css">
+
+        <title>
+    Setting Up neomutt with notmuch, gmail(lieer) and gpg signing
+</title>
+
+        
+    </head>
+    <body>
+        
+    <div class="wrap">
+        <div class="section" id="title">
+            
+    Setting Up neomutt with notmuch, gmail(lieer) and gpg signing
+
+        </div>
+        <div class="section" id="sections">
+            
+        </div>
+        <div class="section" id="content">
+            
+    
+        
+        
+            
+                1051 words
+            
+        
+        
+            
+            
+                &#183; 6 min
+            
+        
+        
+        
+        <hr/>
+    
+    <ul>
+<li><a href="https://uttarayan21.github.io/posts/setting-up-neomutt/#before-we-begin">start</a></li>
+<li><a href="https://uttarayan21.github.io/posts/setting-up-neomutt/#installing">install</a></li>
+<li><a href="https://uttarayan21.github.io/posts/setting-up-neomutt/#notmuch">notmuch</a>
+<ul>
+<li><a href="https://uttarayan21.github.io/posts/setting-up-neomutt/#notmuchhooks">hooks</a>
+<ul>
+<li><a href="https://uttarayan21.github.io/posts/setting-up-neomutt/#pre-new">pre-new</a></li>
+<li><a href="https://uttarayan21.github.io/posts/setting-up-neomutt/#post-new">post-new</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="https://uttarayan21.github.io/posts/setting-up-neomutt/#lieer-gmail">lieer</a></li>
+<li><a href="https://uttarayan21.github.io/posts/setting-up-neomutt/#neomutt">neomutt</a>
+<ul>
+<li><a href="https://uttarayan21.github.io/posts/setting-up-neomutt/#neomuttmailcap">mailcap</a></li>
+<li><a href="https://uttarayan21.github.io/posts/setting-up-neomutt/#neomuttvim-keysrc">vim-keys.rc</a></li>
+<li><a href="https://uttarayan21.github.io/posts/setting-up-neomutt/#neomuttdracula">dracula</a></li>
+</ul>
+</li>
+<li><a href="https://uttarayan21.github.io/posts/setting-up-neomutt/#gpg">encrypt/sign</a></li>
+<li><a href="https://uttarayan21.github.io/posts/setting-up-neomutt/#systemd-timers">systemd/timers</a></li>
+</ul>
+<h2 id="before-we-begin">Before we begin</h2>
+<p>First of all I don't like dotfiles inside the home folder.<br />
+And I wish all programs would follow the <a href="https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html">XDG Base directory standard</a>.<br />
+But since they don't we have to manually export environment variables to specify the location of config files.<br />
+ArchWiki has an excellent list of programs that support the XDG Base directory spec <a href="https://wiki.archlinux.org/index.php/XDG_Base_Directory">here</a></p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#65737e;"># Notmuch
+</span><span style="color:#b48ead;">export </span><span style="color:#bf616a;">NOTMUCH_CONFIG</span><span style="color:#c0c5ce;">=&quot;$</span><span style="color:#bf616a;">XDG_CONFIG_HOME</span><span style="color:#c0c5ce;">&quot;</span><span style="color:#a3be8c;">/notmuch/notmuchrc
+</span><span style="color:#b48ead;">export </span><span style="color:#bf616a;">NMBGIT</span><span style="color:#c0c5ce;">=&quot;$</span><span style="color:#bf616a;">XDG_DATA_HOME</span><span style="color:#c0c5ce;">&quot;</span><span style="color:#a3be8c;">/notmuch/nmbug
+</span></code></pre>
+<p>You need to make sure that the <code>XDG_CONFIG_HOME</code> and <code>XDG_DATA_HOME</code> variables are already exported.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#65737e;"># XDG Dirs
+</span><span style="color:#b48ead;">export </span><span style="color:#bf616a;">XDG_CONFIG_HOME</span><span style="color:#c0c5ce;">=&quot;</span><span style="color:#a3be8c;">/home/&lt;username&gt;/.config</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#b48ead;">export </span><span style="color:#bf616a;">XDG_DATA_HOME</span><span style="color:#c0c5ce;">=&quot;</span><span style="color:#a3be8c;">/home/&lt;username&gt;/.local/share</span><span style="color:#c0c5ce;">&quot;
+</span></code></pre><h2 id="installing">Installing</h2>
+<ul>
+<li>Arch Linux</li>
+</ul>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">sudo</span><span style="color:#c0c5ce;"> pacman</span><span style="color:#bf616a;"> -S</span><span style="color:#c0c5ce;"> notmuch neomutt
+</span><span style="color:#bf616a;">yay -S</span><span style="color:#c0c5ce;"> gmailieer
+</span></code></pre>
+<p>You can also install gmailieer from pip</p>
+<h2 id="notmuch">Notmuch</h2>
+<p>I'm setting my maildir to <code>~/Mail</code>.<br />
+You can run <code>notmuch init</code> or you can directly just edit the <code>~/.config/notmuch/notmuchrc</code> file and put in the following.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">[database]
+path</span><span style="color:#c0c5ce;">=</span><span style="color:#a3be8c;">/home/</span><span style="color:#c0c5ce;">&lt;username&gt;/Mail
+
+</span><span style="color:#bf616a;">[user]
+name</span><span style="color:#c0c5ce;">=&lt;Your </span><span style="color:#bf616a;">Name</span><span style="color:#c0c5ce;">&gt;
+
+</span><span style="color:#b48ead;">[</span><span style="color:#c0c5ce;">new</span><span style="color:#b48ead;">]
+</span><span style="color:#bf616a;">tags</span><span style="color:#c0c5ce;">=</span><span style="color:#a3be8c;">unread</span><span style="color:#c0c5ce;">;</span><span style="color:#bf616a;">inbox</span><span style="color:#c0c5ce;">;
+</span><span style="color:#bf616a;">ignore</span><span style="color:#c0c5ce;">=</span><span style="color:#a3be8c;">/.</span><span style="color:#c0c5ce;">*</span><span style="color:#b48ead;">[</span><span style="color:#a3be8c;">.</span><span style="color:#b48ead;">]</span><span style="color:#c0c5ce;">(</span><span style="color:#bf616a;">json</span><span style="color:#c0c5ce;">|</span><span style="color:#bf616a;">lock</span><span style="color:#c0c5ce;">|</span><span style="color:#bf616a;">bak</span><span style="color:#c0c5ce;">)$/
+
+</span><span style="color:#bf616a;">[search]
+exclude_tags</span><span style="color:#c0c5ce;">=</span><span style="color:#a3be8c;">deleted</span><span style="color:#c0c5ce;">;</span><span style="color:#bf616a;">spam</span><span style="color:#c0c5ce;">;
+
+</span><span style="color:#bf616a;">[maildir]
+synchronize_flags</span><span style="color:#c0c5ce;">=</span><span style="color:#a3be8c;">true
+</span></code></pre><h4 id="notmuch-hooks">notmuch/hooks</h4>
+<p>Notmuch hooks are executed pre and post a notmuch command</p>
+<p>the hooks are stored in</p>
+<pre style="background-color:#2b303b;">
+<code><span style="color:#c0c5ce;">~/Mail/.notmuch/hooks
+</span></code></pre>
+<p>in my case.</p>
+<h4 id="pre-new">pre-new</h4>
+<p>Adding a pre-new hook with the contents</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#65737e;">#!/bin/sh
+</span><span style="color:#96b5b4;">cd </span><span style="color:#bf616a;">~</span><span style="color:#c0c5ce;">/Mail
+</span><span style="color:#bf616a;">gmi</span><span style="color:#c0c5ce;"> sync
+</span></code></pre>
+<p>in <code>~/Mail/.notmuch/hooks/pre-new</code></p>
+<p>This will execute before notmuch new is executed</p>
+<h4 id="post-new">post-new</h4>
+<p>And adding post-new</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#65737e;">#!/bin/sh
+</span><span style="color:#bf616a;">notmuch</span><span style="color:#c0c5ce;"> tag</span><span style="color:#bf616a;"> -inbox -unread</span><span style="color:#c0c5ce;"> tag:sent AND tag:inbox AND tag:unread
+</span><span style="color:#bf616a;">unread</span><span style="color:#c0c5ce;">=$</span><span style="color:#a3be8c;">(</span><span style="color:#bf616a;">notmuch</span><span style="color:#a3be8c;"> search tag:unread </span><span style="color:#c0c5ce;">| </span><span style="color:#bf616a;">wc -l</span><span style="color:#a3be8c;">)
+</span><span style="color:#b48ead;">if </span><span style="color:#96b5b4;">[[ </span><span style="color:#c0c5ce;">$</span><span style="color:#bf616a;">unread -gt</span><span style="color:#c0c5ce;"> 0 </span><span style="color:#96b5b4;">]]</span><span style="color:#c0c5ce;">;</span><span style="color:#b48ead;">then
+    </span><span style="color:#bf616a;">notify-send </span><span style="color:#c0c5ce;">&quot;$</span><span style="color:#bf616a;">unread</span><span style="color:#a3be8c;"> new emails</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#b48ead;">fi
+</span></code></pre>
+<p>This will execute after notmuch new</p>
+<p>Notmuch marks sent messages a unread and inbox tags.<br />
+The post-new will remove inbox and unread tags from sent messages.<br />
+This will also send a notification with the count of unread emails.</p>
+<h2 id="lieer-gmail">Lieer (Gmail)</h2>
+<p>First run</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#96b5b4;">cd </span><span style="color:#bf616a;">~</span><span style="color:#c0c5ce;">/Mail
+</span><span style="color:#bf616a;">gmi</span><span style="color:#c0c5ce;"> init your.email@gmail.com
+</span></code></pre>
+<p>This will open an OAuth window In your browser<br />
+Authorize it and then run.<br />
+If you want the <code>personal</code>, <code>updates</code>,<code>social</code>,<code>forums</code> tags from gmail then run</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">gmi</span><span style="color:#c0c5ce;"> set</span><span style="color:#bf616a;"> --ignore-tags-remote </span><span style="color:#c0c5ce;">&quot;&quot;
+</span></code></pre>
+<p>and then</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#96b5b4;">cd </span><span style="color:#bf616a;">~</span><span style="color:#c0c5ce;">/Mail
+</span><span style="color:#bf616a;">gmi</span><span style="color:#c0c5ce;"> pull
+</span></code></pre>
+<p>This will take a while (took me around 8 minutes for 15K emails)</p>
+<h2 id="neomutt">neomutt</h2>
+<p>Edit the neomutt config file like so.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#c0c5ce;">
+</span><span style="color:#65737e;"># Read password
+</span><span style="color:#96b5b4;">set</span><span style="color:#c0c5ce;"> my_pass = &quot;</span><span style="color:#a3be8c;">`</span><span style="color:#bf616a;">pass</span><span style="color:#a3be8c;"> Email/neomutt`</span><span style="color:#c0c5ce;">&quot;
+
+</span><span style="color:#65737e;"># Sending mail
+</span><span style="color:#c0c5ce;">set smtp_url = &quot;</span><span style="color:#a3be8c;">smtp://&lt;email.username&gt;@smtp.gmail.com:587</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#96b5b4;">set</span><span style="color:#c0c5ce;"> smtp_pass = $</span><span style="color:#bf616a;">my_pass
+
+</span><span style="color:#65737e;"># Creds
+</span><span style="color:#c0c5ce;">set from = &quot;</span><span style="color:#a3be8c;">&lt;email.username&gt;@gmail.com</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#96b5b4;">set</span><span style="color:#c0c5ce;"> signature = &quot;</span><span style="color:#a3be8c;">~/.config/neomutt/signature</span><span style="color:#c0c5ce;">&quot;
+
+</span><span style="color:#65737e;"># Sign with gpgme
+</span><span style="color:#c0c5ce;">set crypt_use_gpgme=yes
+</span><span style="color:#96b5b4;">set</span><span style="color:#c0c5ce;"> postpone_encrypt = yes
+</span><span style="color:#96b5b4;">set</span><span style="color:#c0c5ce;"> pgp_self_encrypt = yes
+</span><span style="color:#96b5b4;">set</span><span style="color:#c0c5ce;"> crypt_use_pka = no
+</span><span style="color:#96b5b4;">set</span><span style="color:#c0c5ce;"> crypt_autoencrypt = no
+</span><span style="color:#96b5b4;">set</span><span style="color:#c0c5ce;"> crypt_autopgp = yes
+</span><span style="color:#96b5b4;">set</span><span style="color:#c0c5ce;"> crypt_autosign = yes
+</span><span style="color:#96b5b4;">set</span><span style="color:#c0c5ce;"> crypt_verify_sig = yes
+</span><span style="color:#96b5b4;">set</span><span style="color:#c0c5ce;"> pgp_sign_as=0xYOUR123GPG
+
+</span><span style="color:#65737e;"># Enable virtual mailboxes
+</span><span style="color:#c0c5ce;">set virtual_spoolfile=yes
+
+</span><span style="color:#bf616a;">virtual-mailboxes </span><span style="color:#c0c5ce;">&quot;</span><span style="color:#a3be8c;">Inbox</span><span style="color:#c0c5ce;">&quot; &quot;</span><span style="color:#a3be8c;">notmuch://?query=tag:inbox</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#bf616a;">virtual-mailboxes </span><span style="color:#c0c5ce;">&quot;</span><span style="color:#a3be8c;">Unread</span><span style="color:#c0c5ce;">&quot; &quot;</span><span style="color:#a3be8c;">notmuch://?query=tag:unread</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#bf616a;">virtual-mailboxes </span><span style="color:#c0c5ce;">&quot;</span><span style="color:#a3be8c;">Personal</span><span style="color:#c0c5ce;">&quot; &quot;</span><span style="color:#a3be8c;">notmuch://?query=tag:personal</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#65737e;"># virtual-mailboxes &quot;Social&quot; &quot;notmuch://?query=tag:social&quot;
+</span><span style="color:#c0c5ce;">virtual-mailboxes &quot;</span><span style="color:#a3be8c;">Updates</span><span style="color:#c0c5ce;">&quot; &quot;</span><span style="color:#a3be8c;">notmuch://?query=tag:updates</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#bf616a;">virtual-mailboxes </span><span style="color:#c0c5ce;">&quot;</span><span style="color:#a3be8c;">Forums</span><span style="color:#c0c5ce;">&quot; &quot;</span><span style="color:#a3be8c;">notmuch://?query=tag:forums</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#bf616a;">virtual-mailboxes </span><span style="color:#c0c5ce;">&quot;</span><span style="color:#a3be8c;">Draft</span><span style="color:#c0c5ce;">&quot; &quot;</span><span style="color:#a3be8c;">notmuch://?query=tag:draft</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#bf616a;">virtual-mailboxes </span><span style="color:#c0c5ce;">&quot;</span><span style="color:#a3be8c;">Sent</span><span style="color:#c0c5ce;">&quot; &quot;</span><span style="color:#a3be8c;">notmuch://?query=tag:sent</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#bf616a;">virtual-mailboxes </span><span style="color:#c0c5ce;">&quot;</span><span style="color:#a3be8c;">Spam</span><span style="color:#c0c5ce;">&quot; &quot;</span><span style="color:#a3be8c;">notmuch://?query=tag:spam</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#65737e;"># virtual-mailboxes &quot;Trash&quot; &quot;notmuch://?query=tag:trash&quot;
+
+</span><span style="color:#96b5b4;">set</span><span style="color:#c0c5ce;"> postponed = &quot;</span><span style="color:#a3be8c;">~/Mail/Drafts</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#96b5b4;">set</span><span style="color:#c0c5ce;"> record = &quot;&quot;
+
+</span><span style="color:#65737e;"># Sidebar
+</span><span style="color:#c0c5ce;">set sidebar_visible
+</span><span style="color:#96b5b4;">set</span><span style="color:#c0c5ce;"> sidebar_format = &quot;</span><span style="color:#a3be8c;">%D%* [%N]%*</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#96b5b4;">set</span><span style="color:#c0c5ce;"> mail_check_stats
+
+</span><span style="color:#65737e;"># Activate caching, as it can greatly improve speed
+</span><span style="color:#c0c5ce;">set header_cache = &quot;</span><span style="color:#a3be8c;">~/.cache/neomutt/headers</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#96b5b4;">set</span><span style="color:#c0c5ce;"> message_cachedir = &quot;</span><span style="color:#a3be8c;">~/.cache/neomutt/bodies</span><span style="color:#c0c5ce;">&quot;
+
+
+</span><span style="color:#65737e;"># Sort by threads
+</span><span style="color:#c0c5ce;">set sort = threads
+</span><span style="color:#65737e;"># Sort threads by last date recieved - newest first
+</span><span style="color:#c0c5ce;">set sort_aux = reverse-last-date-received
+</span><span style="color:#65737e;"># Show date in year/month/day hour:minute format
+</span><span style="color:#c0c5ce;">set date_format=&quot;</span><span style="color:#a3be8c;">%d/%m/%y %I:%M%p</span><span style="color:#c0c5ce;">&quot;
+
+</span><span style="color:#65737e;"># mailcap and auto_view
+</span><span style="color:#c0c5ce;">set mailcap_path = &quot;</span><span style="color:#a3be8c;">~/.config/neomutt/mailcap</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#bf616a;">auto_view</span><span style="color:#c0c5ce;"> text/html
+
+</span><span style="color:#96b5b4;">source </span><span style="color:#bf616a;">~</span><span style="color:#c0c5ce;">/.config/neomutt/vim.muttrc
+</span><span style="color:#96b5b4;">source </span><span style="color:#bf616a;">~</span><span style="color:#c0c5ce;">/.config/neomutt/dracula/dracula.muttrc
+</span></code></pre>
+<p>If you don't use vim keys or the dracula theme remove the last two lines.</p>
+<h4 id="neomutt-mailcap">neomutt/mailcap</h4>
+<p>To view html emails use mailcap with w3m<br />
+The mailcap file <code>~/.config/neomutt/mailcap</code></p>
+<pre style="background-color:#2b303b;">
+<code><span style="color:#c0c5ce;">text/html; w3m -I %{charset} -T text/html ; copiousoutput; nametemplate=%s.html
+</span></code></pre><h4 id="neomutt-vim-keys-rc">neomutt/vim-keys.rc</h4>
+<p>The vim.muttrc file from <a href="https://github.com/neomutt/neomutt/blob/master/contrib/vim-keys/vim-keys.rc">vim-keys.rc</a></p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#65737e;"># Moving around
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> attach,browser,index       g   noop
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> attach,browser,index       gg  first-entry
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> attach,browser,index       G   last-entry
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> pager                      g  noop
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> pager                      gg  top
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> pager                      G   bottom
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> pager                      k   previous-line
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> pager                      j   next-line
+
+</span><span style="color:#65737e;"># Scrolling
+# bind attach,browser,pager,index \CF next-page
+# bind attach,browser,pager,index \CB previous-page
+
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> attach,browser,pager,index </span><span style="color:#96b5b4;">\C</span><span style="color:#c0c5ce;">u half-up
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> attach,browser,pager,index </span><span style="color:#96b5b4;">\C</span><span style="color:#c0c5ce;">d half-down
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> browser,pager              </span><span style="color:#96b5b4;">\C</span><span style="color:#c0c5ce;">e next-line
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> browser,pager              </span><span style="color:#96b5b4;">\C</span><span style="color:#c0c5ce;">y previous-line
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> index                      </span><span style="color:#96b5b4;">\C</span><span style="color:#c0c5ce;">e next-line
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> index                      </span><span style="color:#96b5b4;">\C</span><span style="color:#c0c5ce;">y previous-line
+
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> pager,index                d   noop
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> pager,index                dd  delete-message
+
+</span><span style="color:#65737e;"># bind index                      \Cm list-reply # Doesn&#39;t work currently
+
+
+# Threads
+</span><span style="color:#c0c5ce;">bind browser,pager,index        N   search-opposite
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> pager,index                dT  delete-thread
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> pager,index                dt  delete-subthread
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> pager,index                gt  next-thread
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> pager,index                gT  previous-thread
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> index                      za  collapse-thread
+</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;"> index                      zA  collapse-all </span><span style="color:#65737e;"># Missing :folddisable/foldenable
+</span></code></pre><h3 id="neomutt-dracula">neomutt/dracula</h3>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#96b5b4;">cd </span><span style="color:#bf616a;">~</span><span style="color:#c0c5ce;">/.config/neomutt/
+</span><span style="color:#bf616a;">git</span><span style="color:#c0c5ce;"> clone https://github.com/dracula/mutt dracula
+</span></code></pre><h2 id="gpg">GPG</h2>
+<p>Set your gpg key in neomutt in the neomuttrc as</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">gpg --keyid-format</span><span style="color:#c0c5ce;"> 0xlong</span><span style="color:#bf616a;"> -K --fingerprint
+</span></code></pre>
+<p>then set the gpg key in neomutt</p>
+<pre style="background-color:#2b303b;">
+<code><span style="color:#c0c5ce;">set pgp_sign_as=0xYOUR123GPG
+</span></code></pre><h3 id="systemd-timers">Systemd Timers</h3>
+<p>We can use user systemd units to auto run notmuch new and sync emails automatically.</p>
+<p>Systemd timers and services don't seem to have the environment variables when run.
+So we need to export them before we run the services.</p>
+<p><code>checkmail</code></p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#65737e;">#!/usr/bin/bash
+</span><span style="color:#b48ead;">export </span><span style="color:#bf616a;">NOTMUCH_CONFIG</span><span style="color:#c0c5ce;">=</span><span style="color:#a3be8c;">/home/</span><span style="color:#c0c5ce;">&lt;username&gt;/.config/notmuch/notmuchrc
+</span><span style="color:#b48ead;">export </span><span style="color:#bf616a;">NMBGIT</span><span style="color:#c0c5ce;">=</span><span style="color:#a3be8c;">/home/</span><span style="color:#c0c5ce;">&lt;username&gt;/.local/share/notmuch/nmbug
+</span><span style="color:#bf616a;">notmuch</span><span style="color:#c0c5ce;"> new
+</span></code></pre>
+<p>Put checkmail in <code>~/.local/bin/checkmail</code></p>
+<p><code>checkmail.service</code></p>
+<pre style="background-color:#2b303b;">
+<code class="language-systemd" data-lang="systemd"><span style="color:#c0c5ce;">[Unit]
+Description=Check Mail
+RefuseManualStart=no
+RefuseManualStop=yes
+
+[Service]
+Type=oneshot
+ExecStart=/home/&lt;username&gt;/.local/bin/checkmail
+</span></code></pre>
+<p><code>checkmail.timer</code></p>
+<pre style="background-color:#2b303b;">
+<code class="language-systemd" data-lang="systemd"><span style="color:#c0c5ce;">[Unit]
+Description=Check Mail every fifteen minutes
+RefuseManualStart=no
+RefuseManualStop=no
+
+[Timer]
+Persistent=false
+OnBootSec= 5min
+OnUnitActiveSec= 15min
+Unit=checkmail.service
+
+[Install]
+WantedBy=default.target
+</span></code></pre>
+<p>put <code>checkmail.timer</code> and <code>checkmail.service</code> in <code>~/.config/systemd/user/</code> folder</p>
+<p>Now you can enable checkmail.timer to start on login by</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">systemctl --user</span><span style="color:#c0c5ce;"> enable checkmail.timer
+</span></code></pre>
+<p>You can check the status of <code>checkmail.timer</code> by</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">systemctl --user</span><span style="color:#c0c5ce;"> status checkmail.timer
+</span></code></pre>
+
+        </div>
+        
+    <div class="section bottom-menu">
+        <hr/>
+        <p>
+            
+                
+                    <a href="&#x2F;posts">posts</a>
+                    &#183;
+                
+                    <a href="&#x2F;about">about</a>
+                    &#183;
+                
+                    <a href="https:&#x2F;&#x2F;github.com&#x2F;uttarayan21">github</a>
+                    &#183;
+                
+            
+            <a href="https:&#x2F;&#x2F;uttarayan21.github.io">
+                home
+            </a>
+        </p>
+    </div>
+
+        
+    
+
+    </div>
+
+    </body>
+</html>

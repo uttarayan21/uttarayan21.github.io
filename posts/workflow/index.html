@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="chrome=1">
+        <meta name="HandheldFriendly" content="True">
+        <meta name="MobileOptimized" content="320">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="referrer" content="no-referrer">
+
+        <link rel="stylesheet" href="https:&#x2F;&#x2F;uttarayan21.github.io&#x2F;fonts.css">
+        <link rel="stylesheet" href="https:&#x2F;&#x2F;uttarayan21.github.io&#x2F;style.css">
+
+        <title>
+    My workflow with tmux and vim
+</title>
+
+        
+    </head>
+    <body>
+        
+    <div class="wrap">
+        <div class="section" id="title">
+            
+    My workflow with tmux and vim
+
+        </div>
+        <div class="section" id="sections">
+            
+        </div>
+        <div class="section" id="content">
+            
+    
+        
+        
+            
+                221 words
+            
+        
+        
+            
+            
+                &#183; 2 min
+            
+        
+        
+        
+        <hr/>
+    
+    <p>I usually do all my work is done inside a terminal.
+Most of my work consists of either writing assignments for college or programming.</p>
+<p>For prorgamming/writing I use <a href="https://github.com/neovim/neovim">neovim</a> with tmux.<br />
+<a href="https://github.com/neovim/neovim">NeoVim</a> is a modern fork of Vim.<br />
+The list of plugins I use is</p>
+<pre style="background-color:#2b303b;">
+<code class="language-vim" data-lang="vim"><span style="color:#c0c5ce;">
+call </span><span style="color:#8fa1b3;">plug#begin</span><span style="color:#c0c5ce;">()
+</span><span style="color:#65737e;">&quot; QOL
+</span><span style="color:#c0c5ce;">    Plug </span><span style="color:#a3be8c;">&#39;airblade/vim-rooter&#39;
+</span><span style="color:#c0c5ce;">    Plug </span><span style="color:#a3be8c;">&#39;yuttie/comfortable-motion.vim&#39;
+</span><span style="color:#c0c5ce;">    Plug </span><span style="color:#a3be8c;">&#39;tpope/vim-surround&#39;
+</span><span style="color:#c0c5ce;">    Plug </span><span style="color:#a3be8c;">&#39;iamcco/markdown-preview.nvim&#39;</span><span style="color:#c0c5ce;">, { </span><span style="color:#a3be8c;">&#39;do&#39;</span><span style="color:#c0c5ce;">: { -&gt; </span><span style="color:#8fa1b3;">mkdp#util#install</span><span style="color:#c0c5ce;">() }, </span><span style="color:#a3be8c;">&#39;for&#39;</span><span style="color:#c0c5ce;">: [</span><span style="color:#a3be8c;">&#39;markdown&#39;</span><span style="color:#c0c5ce;">, </span><span style="color:#a3be8c;">&#39;vim-plug&#39;</span><span style="color:#c0c5ce;">]}
+</span><span style="color:#65737e;">&quot; Fzf
+</span><span style="color:#c0c5ce;">    Plug </span><span style="color:#a3be8c;">&#39;junegunn/fzf&#39;
+</span><span style="color:#c0c5ce;">    Plug </span><span style="color:#a3be8c;">&#39;junegunn/fzf.vim&#39;
+</span><span style="color:#65737e;">&quot; Git plugin
+    &quot; Plug &#39;tpope/vim-fugitive&#39;
+
+&quot; GUI Stuff
+</span><span style="color:#c0c5ce;">    Plug </span><span style="color:#a3be8c;">&#39;vim-airline/vim-airline&#39;
+</span><span style="color:#c0c5ce;">    Plug </span><span style="color:#a3be8c;">&#39;vim-airline/vim-airline-themes&#39;
+</span><span style="color:#c0c5ce;">	Plug </span><span style="color:#a3be8c;">&#39;tpope/vim-commentary&#39;
+</span><span style="color:#c0c5ce;">    Plug </span><span style="color:#a3be8c;">&#39;uttarayan21/minimalist&#39;  </span><span style="color:#65737e;">&quot; Plug &#39;dikiaap/minimalist&#39;
+</span><span style="color:#c0c5ce;">    Plug </span><span style="color:#a3be8c;">&#39;dracula/vim&#39;
+</span><span style="color:#c0c5ce;">    Plug </span><span style="color:#a3be8c;">&#39;tpope/vim-vinegar&#39;
+</span><span style="color:#c0c5ce;">    Plug </span><span style="color:#a3be8c;">&#39;mhinz/vim-crates&#39;
+</span><span style="color:#65737e;">&quot; Intellisense
+</span><span style="color:#c0c5ce;">    Plug </span><span style="color:#a3be8c;">&#39;neoclide/coc.nvim&#39;</span><span style="color:#c0c5ce;">, {</span><span style="color:#a3be8c;">&#39;branch&#39;</span><span style="color:#c0c5ce;">: </span><span style="color:#a3be8c;">&#39;release&#39;</span><span style="color:#c0c5ce;">}
+</span><span style="color:#65737e;">&quot; Ctags
+</span><span style="color:#c0c5ce;">    Plug </span><span style="color:#a3be8c;">&#39;ludovicchabant/vim-gutentags&#39;
+</span><span style="color:#c0c5ce;">    Plug </span><span style="color:#a3be8c;">&#39;majutsushi/tagbar&#39;
+</span><span style="color:#65737e;">&quot; Syntax Highlighting
+</span><span style="color:#c0c5ce;">    Plug </span><span style="color:#a3be8c;">&#39;rust-lang/rust.vim&#39;
+</span><span style="color:#65737e;">&quot; Devicons
+</span><span style="color:#c0c5ce;">    Plug </span><span style="color:#a3be8c;">&#39;ryanoasis/vim-devicons&#39;
+</span><span style="color:#65737e;">&quot; Text Objects
+</span><span style="color:#c0c5ce;">    Plug </span><span style="color:#a3be8c;">&#39;wellle/targets.vim&#39;
+</span><span style="color:#65737e;">&quot; Dictionary
+</span><span style="color:#c0c5ce;">    Plug </span><span style="color:#a3be8c;">&#39;reedes/vim-wordy&#39;
+</span><span style="color:#65737e;">&quot; Debug
+</span><span style="color:#c0c5ce;">    Plug </span><span style="color:#a3be8c;">&#39;epheien/termdbg&#39;
+</span><span style="color:#c0c5ce;">call </span><span style="color:#8fa1b3;">plug#end</span><span style="color:#c0c5ce;">()
+</span></code></pre>
+<p>As for documents I write them in markdown and compile them to pdf using pandoc.</p>
+<p>For emailing I use neomutt with gmail.
+All my <a href="https://github.com/uttarayan21/dotfiles">dotfiles</a> for neovim,tmux,zsh and everything else is stored in my github <a href="https://github.com/uttarayan21/dotfiles">here</a></p>
+
+
+        </div>
+        
+    <div class="section bottom-menu">
+        <hr/>
+        <p>
+            
+                
+                    <a href="&#x2F;posts">posts</a>
+                    &#183;
+                
+                    <a href="&#x2F;about">about</a>
+                    &#183;
+                
+                    <a href="https:&#x2F;&#x2F;github.com&#x2F;uttarayan21">github</a>
+                    &#183;
+                
+            
+            <a href="https:&#x2F;&#x2F;uttarayan21.github.io">
+                home
+            </a>
+        </p>
+    </div>
+
+        
+    
+
+    </div>
+
+    </body>
+</html>
