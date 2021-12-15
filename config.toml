@@ -21,5 +21,6 @@ highlight_code = true
 sam_menu = [
     { text = "posts", link = "/posts" },
     { text = "about", link = "/about" },
-    { text = "github", link = "https://github.com/uttarayan21" }
+    { text = "github", link = "https://github.com/uttarayan21" },
+    { text = "email", link = "mailto:email@uttarayan.me" }
 ]
