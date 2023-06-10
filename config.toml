@@ -22,5 +22,5 @@ sam_menu = [
     { text = "posts", link = "/posts" },
     { text = "about", link = "/about" },
     { text = "github", link = "https://github.com/uttarayan21" },
-    { text = "email", link = "mailto:email@uttarayan.me" }
+    { text = "email", link = "mailto:uttarayan21@gmail.com" }
 ]
